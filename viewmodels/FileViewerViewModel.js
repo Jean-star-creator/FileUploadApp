@@ -9,10 +9,10 @@
  *
  * Ponto MVVM: Este é o ViewModel central para a funcionalidade de arquivos.
  * Ele gerencia o estado `files` e as funções que o modificam, agora interage com o "Model"
- * de armazenamento (Firebase).
+ * de armazenamento (Firebase). A flag `uploaded` agora reflete o status no Firebase.
  *
  * Dependências:
- * - react: Para o useState, useEffect (para carregar arquivos).
+ * - react: Para o useState, useEffect.
  * - react-native: Para Alert.
  * - ../firebaseConfig: Para importar as funções e a instância do Firebase Storage.
  *
@@ -21,21 +21,23 @@
  * Necessita de pacote: 'firebase'
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import {
-  storage, // Instância do Storage
-  ref,     // Função para criar referências de arquivo
-  uploadBytes, // Função para subir bytes
   getDownloadURL, // Função para obter URL de download
   listAll // Função para listar arquivos
+  , // Instância do Storage
+  ref,
+  storage, // Função para criar referências de arquivo
+  uploadBytes
 } from '../firebaseConfig'; // Importa as configurações e funções do Firebase
 
 export const useFileViewerViewModel = () => {
-  const [files, setFiles] = useState([]); // Inicia a lista de arquivos vazia
-  const [loading, setLoading] = useState(true); // Estado de carregamento
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Função para carregar os arquivos do Firebase Storage
+  // Ponto MVVM: A lógica de carregar dados do "Model" (Firebase) está aqui.
+  // Garante que o estado `files` no ViewModel esteja sempre atualizado com o que está na nuvem.
   const loadFilesFromFirebase = async () => {
     setLoading(true);
     try {
@@ -50,11 +52,10 @@ res.items.map
           const fileName = 
 itemRef.name
 ;
-          // Tenta adivinhar o tipo com base na extensão
           const fileType = fileName.includes('.pdf') ? 'pdf' : 'image';
 
           return {
-            id: itemRef.fullPath, // Usa o fullPath como ID único
+            id: itemRef.fullPath,
             name: fileName,
             uri: downloadURL,
             type: fileType,
@@ -71,60 +72,58 @@ itemRef.name
     }
   };
 
-  // Carrega os arquivos quando o componente é montado
   useEffect(() => {
     loadFilesFromFirebase();
-  }, []); // Array de dependências vazio para rodar apenas uma vez na montagem
+  }, []);
 
-  // Lógica para adicionar um novo arquivo e fazer upload para o Firebase
+  // Ponto MVVM: Lógica de negócio para adicionar e fazer o upload de um novo arquivo.
   const addFile = async (localFileUri, fileType) => {
+    setLoading(true); // Pode ser bom mostrar um loader durante o upload também
     try {
-      // Ponto MVVM: O ViewModel coordena o upload, que é uma lógica de negócio.
-      const response = await fetch(localFileUri); // Faz um fetch do URI local do arquivo
-      const blob = await response.blob(); // Converte para Blob
+      const response = await fetch(localFileUri);
+      const blob = await response.blob();
 
       const fileName = `${
 Date.now
 ()}_${Math.random().toString(36).substring(7)}.${fileType === 'image' ? 'jpg' : 'pdf'}`;
-      const storageRef = ref(storage, `uploads/${fileName}`); // Cria uma referência no Storage
+      const storageRef = ref(storage, `uploads/${fileName}`);
 
-      await uploadBytes(storageRef, blob); // Faz o upload do Blob
-
-      const downloadURL = await getDownloadURL(storageRef); // Obtém a URL de download
+      await uploadBytes(storageRef, blob); // Faz o upload
+      const downloadURL = await getDownloadURL(storageRef); // Obtém a URL
 
       const newFile = {
-        id: storageRef.fullPath, // ID único do Firebase
+        id: storageRef.fullPath,
         name: fileName,
         uri: downloadURL,
         type: fileType,
-        uploaded: true, // Já foi para o Firebase!
+        uploaded: true, // Automaticamente true, pois foi acabado de subir
       };
 
-      setFiles(prevFiles => [...prevFiles, newFile]); // Adiciona à lista local
+      // Ponto MVVM: Atualiza o estado `files` no ViewModel.
+      setFiles(prevFiles => [...prevFiles, newFile]);
       Alert.alert('Sucesso', 'Arquivo enviado e adicionado à lista!');
 
     } catch (error) {
       console.error("Erro ao enviar arquivo para o Firebase:", error);
       Alert.alert('Erro', 'Não foi possível enviar o arquivo.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Lógica para sincronizar todos os arquivos não enviados (agora, isso seria para arquivos *locais* que ainda não subiram)
-  // Para esta versão, assumimos que 'addFile' já faz o upload direto.
-  // A função `synchronizeAllFiles` agora pode ser usada para "revalidar" a lista se tivermos arquivos locais pendentes,
-  // ou para forçar um re-upload de arquivos marcados como não enviados.
-  // Por simplicidade, vamos refatorar para que ela simplesmente recarregue do Firebase
-  // e, futuramente, você pode adicionar a lógica de "upload pendente".
+  // Ponto MVVM: Ação de sincronização agora significa recarregar a lista do Firebase.
   const synchronizeAllFiles = async () => {
-    await loadFilesFromFirebase(); // Recarrega do Firebase para garantir a lista mais recente
-    Alert.alert('Sincronização', 'Lista de arquivos atualizada do Firebase!');
+    Alert.alert('Sincronizando', 'Buscando a lista mais recente de arquivos do Firebase...');
+    await loadFilesFromFirebase(); // Chama a função que carrega do Firebase
+    Alert.alert('Sincronização Concluída', 'Lista de arquivos atualizada!');
   };
 
-
+  // Ponto MVVM: Retorna o estado e as funções para a View.
   return {
     files,
-    loading, // Expor estado de carregamento para a View
+    loading,
     addFile,
     synchronizeAllFiles,
   };
 }; 
+

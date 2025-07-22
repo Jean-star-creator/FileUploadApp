@@ -1,4 +1,3 @@
-//  NOVA ALTERAÇÃO DO ARQUIVO 
 
 // my-file-upload-app/screens/FileViewer.js
 
@@ -28,23 +27,18 @@
  */
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native'; // Bruno, goBack button
 import React from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Button, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import FileItem from '../components/FileItem';
 import UploadButton from '../components/UploadButton';
 import { useFileViewerViewModel } from '../viewmodels/FileViewerViewModel';
 
-
-import { useNavigation } from '@react-navigation/native'; // Bruno, goBack button
-
-
 export default function FileViewerScreen() {
-  // Ponto MVVM: Obtenção do ViewModel. A View se "inscreve" nos dados e lógica
-  // fornecidos pelo ViewModel.
   const { files, loading, addFile, synchronizeAllFiles } = useFileViewerViewModel();
-
-    const navigation = useNavigation(); // Bruno, goBack button:
-
+  
+  const navigation = useNavigation(); // Bruno, goBack button:
+  
   const renderItem = ({ item }) => (
     <FileItem file={item} />
   );
@@ -52,12 +46,19 @@ export default function FileViewerScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+
+        <Button title="Voltar" onPress={() => navigation.goBack()} />
+
         <Text style={styles.title}>Meus Arquivos</Text>
-        <TouchableOpacity onPress={synchronizeAllFiles} style={styles.syncButton} disabled={loading}>
+        <TouchableOpacity
+          onPress={synchronizeAllFiles}
+          style={styles.syncButton}
+          disabled={loading} // Desabilita o botão enquanto estiver carregando/sincronizando
+        >
           {loading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <MaterialCommunityIcons name="cloud-sync" size={24} color="#fff" /> // Ícone de sincronização
+            <MaterialCommunityIcons name="cloud-sync" size={24} color="#fff" />
           )}
           <Text style={styles.syncButtonText}>
             {loading ? 'Carregando...' : 'Sincronizar'}
@@ -65,7 +66,7 @@ export default function FileViewerScreen() {
         </TouchableOpacity>
       </View>
 
-      {loading ? (
+      {loading && files.length === 0 ? ( // Mostra o loader completo apenas se não houver arquivos carregados ainda
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007bff" />
           <Text style={styles.loadingText}>Carregando arquivos...</Text>
@@ -78,7 +79,7 @@ export default function FileViewerScreen() {
 item.id
 }
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Text style={styles.emptyListText}>Nenhum arquivo ainda. Adicione um!</Text>}
+          ListEmptyComponent={!loading && <Text style={styles.emptyListText}>Nenhum arquivo ainda. Adicione um!</Text>}
         />
       )}
 
@@ -139,4 +140,3 @@ const styles = StyleSheet.create({
     color: '#555',
   },
 }); 
-
