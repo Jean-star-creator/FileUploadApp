@@ -26,7 +26,9 @@
 //           Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
 //           Press{' '}
 //           <ThemedText type="defaultSemiBold">
-//             {Platform.select({
+//             {
+// Platform.select
+// ({
 //               ios: 'cmd + d',
 //               android: 'cmd + m',
 //               web: 'F12',
@@ -92,36 +94,86 @@
  *
  * Este arquivo é o ponto de entrada do aplicativo.
  * Ele configura o sistema de navegação usando React Navigation,
- * definindo as telas Home e FileViewer.
+ * e agora, gerencia as rotas condicionais baseadas no estado de autenticação.
+ * O `AuthProvider` envolve todo o aplicativo para disponibilizar o usuário logado.
  *
- * Ponto MVVM: Este é o ponto onde as Views (telas) são inicializadas
- * e conectadas ao sistema de navegação. Ele não possui lógica de negócio.
+ * Ponto MVVM: Este é o orquestrador das Views. Ele decide qual conjunto de Views
+ * exibir com base no estado de autenticação fornecido pelo `AuthContext`.
  *
  * Dependências:
- * - @react-navigation/native: Necessário para o core da navegação.
- * - @react-navigation/native-stack: Necessário para criar um navegador baseado em pilha.
+ * - @react-navigation/native: Core da navegação.
+ * - @react-navigation/native-stack: Navegador em pilha.
+ * - ./screens/LoginScreen: Nova tela de login.
+ * - ./screens/RegisterScreen: Nova tela de registro.
+ * - ./contexts/AuthContext: Provedor de autenticação.
+ * - ./screens/Home: Tela principal.
+ * - ./screens/FileViewer: Tela de visualização de arquivos.
  *
- * Quem o chama: O ambiente Expo/React Native chama este arquivo como o ponto de partida.
- * Quem ele chama: HomeScreen e FileViewerScreen (através do Navigator).
+ * Quem o chama: O ambiente Expo/React Native.
+ * Quem ele chama: LoginScreen, RegisterScreen, HomeScreen, FileViewerScreen, AuthProvider.
  */
 
-// import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-// import FileViewerScreen from './screens/FileViewer';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { AuthProvider, useAuth } from '../../contexts/AuthContext'; // NOVO: Importa o provedor e o hook de autenticação
 import FileViewerScreen from '../../screens/FileViewer';
-// import HomeScreen from './screens/Home';
 import HomeScreen from '../../screens/Home';
+import LoginScreen from '../../screens/LoginScreen'; // NOVO: Tela de Login
+import RegisterScreen from '../../screens/RegisterScreen'; // NOVO: Tela de Registro
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+// Componente que decide qual grupo de rotas exibir (autenticado ou não)
+function AppRoutes() {
+  // Ponto MVVM: A View (AppRoutes) consome o estado de autenticação do AuthContext.
+  const { user, loading } = useAuth(); // Obtém o usuário e o estado de carregamento do contexto
+
+  // Se o AuthContext ainda estiver verificando o estado de autenticação inicial, exibe um loader.
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
   return (
-    // <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="FileViewer" component={FileViewerScreen} />
-      </Stack.Navigator>
-    // </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {user ? ( // Se há um usuário logado
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="FileViewer" component={FileViewerScreen} />
+        </>
+      ) : ( // Se não há usuário logado
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
+      )}
+    </Stack.Navigator>
   );
 }
+
+export default function App() {
+  return (
+    <AuthProvider>
+        
+      {/* Não precisa de containers aninhados na navegação. Senão dará erro! Por isso deve-se Comentar o "<NavigationContainer>" */}
+
+      {/* <NavigationContainer>  */}
+        <AppRoutes />
+      {/* </NavigationContainer> */}
+      
+    </AuthProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+}); 

@@ -3,42 +3,43 @@
 /**
  * Componente da Tela Home (HomeScreen - View)
  *
- * Esta tela é a View da arquitetura MVVM para a Home.
- * Ela é responsável **APENAS** por renderizar a interface do usuário
- * e reagir a interações do usuário, chamando métodos do ViewModel.
- * Não contém lógica de negócio complexa.
+ * Esta tela serve como o ponto central de navegação do aplicativo.
+ * Agora, inclui um botão de logout.
  *
- * Ponto MVVM: Esta é a View. Ela consome o HomeViewModel para suas operações.
+ * Ponto MVVM: Esta é a View. Ela consome o HomeViewModel para navegação
+ * e o `useAuth` do AuthContext para a funcionalidade de logout.
  *
  * Dependências:
- * - react-native: Para componentes UI como View, Text, StyleSheet, Button.
+ * - react-native: Para View, Text, StyleSheet, Button.
  * - ../viewmodels/HomeViewModel: Importa o ViewModel para gerenciar a lógica de navegação.
+ * - ../contexts/AuthContext: Para a função de logout.
  *
  * Quem o chama: App.js (através do Stack Navigator).
- * Quem ele chama: useHomeViewModel (para obter a lógica).
+ * Quem ele chama: useHomeViewModel (para obter a lógica), useAuth (para logout).
  */
 
-import { Button, StyleSheet, Text, View } from 'react-native';
-import { useHomeViewModel } from '../viewmodels/HomeViewModel'; // Importa o ViewModel
-import { Link } from 'expo-router';
+import React from 'react';
+import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { useHomeViewModel } from '../viewmodels/HomeViewModel';
+import { useAuth } from '../contexts/AuthContext'; // NOVO: Importa o hook de autenticação
 
 export default function HomeScreen() {
-  // Ponto MVVM: Obtenção do ViewModel. A View não sabe como a navegação é feita,
-  // apenas que ela pode chamar `MapsToFiles`.
   const { navigateToFiles } = useHomeViewModel();
+  // Ponto MVVM: A View obtém a função de logout do AuthContext.
+  const { logout } = useAuth(); // Obtém a função de logout
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bem-vindo ao App de Arquivos!</Text>
-      <Text style={styles.subtitle}>Gerencie suas imagens e PDFs.</Text>
+      <Text style={styles.subtitle}>Gerencie suas imagens e PDFs com segurança.</Text>
       <Button
         title="Ver Meus Arquivos"
-        // Ponto MVVM: A View dispara o evento e o ViewModel lida com a ação.
         onPress={navigateToFiles}
         color="#841584"
       />
-      <Link href={"/painel"}>Ir para Painel</Link>
-      
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Text style={styles.logoutButtonText}>Sair da Conta</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -64,4 +65,16 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     textAlign: 'center',
   },
-});
+  logoutButton: {
+    marginTop: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#dc3545', // Cor vermelha para o logout
+    borderRadius: 5,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+}); 
