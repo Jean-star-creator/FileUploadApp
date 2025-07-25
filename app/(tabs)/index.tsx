@@ -26,9 +26,7 @@
 //           Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
 //           Press{' '}
 //           <ThemedText type="defaultSemiBold">
-//             {
-// Platform.select
-// ({
+//             {Platform.select({
 //               ios: 'cmd + d',
 //               android: 'cmd + m',
 //               web: 'F12',
@@ -40,7 +38,7 @@
 //       <ThemedView style={styles.stepContainer}>
 //         <ThemedText type="subtitle">Step 2: Explore</ThemedText>
 //         <ThemedText>
-//           {`Tap the Explore tab to learn more about what's included in this starter app.`}
+//           {Tap the Explore tab to learn more about what's included in this starter app.}
 //         </ThemedText>
 //       </ThemedView>
 //       <ThemedView style={styles.stepContainer}>
@@ -95,41 +93,42 @@
  * Este arquivo é o ponto de entrada do aplicativo.
  * Ele configura o sistema de navegação usando React Navigation,
  * e agora, gerencia as rotas condicionais baseadas no estado de autenticação.
- * O `AuthProvider` envolve todo o aplicativo para disponibilizar o usuário logado.
+ * O AuthProvider e o NOVO FilesProvider envolvem todo o aplicativo
+ * para disponibilizar o usuário logado e os dados de arquivos globalmente.
  *
  * Ponto MVVM: Este é o orquestrador das Views. Ele decide qual conjunto de Views
- * exibir com base no estado de autenticação fornecido pelo `AuthContext`.
+ * exibir com base no estado de autenticação e fornece os contextos necessários.
  *
  * Dependências:
  * - @react-navigation/native: Core da navegação.
  * - @react-navigation/native-stack: Navegador em pilha.
- * - ./screens/LoginScreen: Nova tela de login.
- * - ./screens/RegisterScreen: Nova tela de registro.
+ * - ./screens/LoginScreen: Tela de login.
+ * - ./screens/RegisterScreen: Tela de registro.
  * - ./contexts/AuthContext: Provedor de autenticação.
+ * - ./contexts/FilesContext: NOVO: Provedor de arquivos.
  * - ./screens/Home: Tela principal.
  * - ./screens/FileViewer: Tela de visualização de arquivos.
  *
  * Quem o chama: O ambiente Expo/React Native.
- * Quem ele chama: LoginScreen, RegisterScreen, HomeScreen, FileViewerScreen, AuthProvider.
+ * Quem ele chama: LoginScreen, RegisterScreen, HomeScreen, FileViewerScreen, AuthProvider, FilesProvider.
  */
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
+import { AuthProvider, useAuth } from '../../contexts/AuthContext';
+import { FilesProvider } from '../../contexts/FilesContext'; // NOVO: Importa o provedor de arquivos
+
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { AuthProvider, useAuth } from '../../contexts/AuthContext'; // NOVO: Importa o provedor e o hook de autenticação
 import FileViewerScreen from '../../screens/FileViewer';
 import HomeScreen from '../../screens/Home';
-import LoginScreen from '../../screens/LoginScreen'; // NOVO: Tela de Login
-import RegisterScreen from '../../screens/RegisterScreen'; // NOVO: Tela de Registro
+import LoginScreen from '../../screens/LoginScreen';
+import RegisterScreen from '../../screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator();
 
-// Componente que decide qual grupo de rotas exibir (autenticado ou não)
 function AppRoutes() {
-  // Ponto MVVM: A View (AppRoutes) consome o estado de autenticação do AuthContext.
-  const { user, loading } = useAuth(); // Obtém o usuário e o estado de carregamento do contexto
+  const { user, loading } = useAuth();
 
-  // Se o AuthContext ainda estiver verificando o estado de autenticação inicial, exibe um loader.
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
@@ -140,12 +139,12 @@ function AppRoutes() {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {user ? ( // Se há um usuário logado
+      {user ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="FileViewer" component={FileViewerScreen} />
         </>
-      ) : ( // Se não há usuário logado
+      ) : (
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
@@ -156,17 +155,22 @@ function AppRoutes() {
 }
 
 export default function App() {
+ 
+
   return (
     <AuthProvider>
-        
-      {/* Não precisa de containers aninhados na navegação. Senão dará erro! Por isso deve-se Comentar o "<NavigationContainer>" */}
+      {/* NOVO: Envolvemos AppRoutes (e, consequentemente, as rotas autenticadas) com FilesProvider */}
+      <FilesProvider>
 
-      {/* <NavigationContainer>  */}
-        <AppRoutes />
-      {/* </NavigationContainer> */}
-      
+        {/* Não precisa de containers aninhados na navegação. Senão dará erro! Por isso deve-se Comentar o "<NavigationContainer>" */}
+        {/* <NavigationContainer> */}
+          <AppRoutes />
+        {/* </NavigationContainer> */}
+
+      </FilesProvider>
     </AuthProvider>
   );
+
 }
 
 const styles = StyleSheet.create({
@@ -175,5 +179,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
-  },
-}); 
+  },
+});
