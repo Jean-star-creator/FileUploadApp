@@ -21,15 +21,15 @@
  * Quem ele chama: Funções do Firebase Storage.
  */
 
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react'; // <-- useCallback adicionado
-import { Alert, ActivityIndicator, View, StyleSheet, Text } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'; // <-- useCallback adicionado
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import {
-  storage,
-  ref,
-  uploadBytes,
+  deleteObject,
   getDownloadURL,
   listAll,
-  deleteObject
+  ref,
+  storage,
+  uploadBytes
 } from '../firebaseConfig';
 import { useAuth } from './AuthContext';
 
@@ -278,4 +278,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555',
   },
-});
+}); 
